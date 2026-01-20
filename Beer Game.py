@@ -269,7 +269,7 @@ def downstream_key(role_key):
     }
     return mapping[role_key]
 
-def render_charts(df: pd.DataFrame, title_suffix=""):
+def render_charts(df: pd.DataFrame, title_suffix="", y_max=None):     # Bullwhip chart (locked scale if y_max provided)     fig1 = plt.figure()      plt.plot(df["week"], df["end_customer_demand"], label="End-Customer Demand")     plt.plot(df["week"], df["order_retailer"], label="Retailer Orders")     plt.plot(df["week"], df["order_regional"], label="Regional Orders")     plt.plot(df["week"], df["order_dc"], label="DC Orders")     plt.plot(df["week"], df["order_producer"], label="Producer Orders")      plt.xlabel("Week")     plt.ylabel("Units")     plt.title(f"Bullwhip – Orders Over Time{title_suffix}")      if y_max is not None:         plt.ylim(0, y_max)      plt.legend()     st.pyplot(fig1)      # Waste chart (same logic)     fig2 = plt.figure()     plt.plot(df["week"], df["retailer_waste_cum"], label="Retailer Waste (cum)")     plt.plot(df["week"], df["regional_waste_cum"], label="Regional Waste (cum)")     plt.plot(df["week"], df["dc_waste_cum"], label="DC Waste (cum)")     plt.plot(df["week"], df["producer_waste_cum"], label="Producer Waste (cum)")      plt.xlabel("Week")     plt.ylabel("Units wasted")     plt.title(f"Food Waste (Spoilage) – Cumulative{title_suffix}")      if y_max is not None:         plt.ylim(0, y_max)      plt.legend()     st.pyplot(fig2)
     # Bullwhip chart
     fig1 = plt.figure()
     plt.plot(df["week"], df["end_customer_demand"], label="End-Customer Demand")
@@ -391,7 +391,7 @@ with right:
         st.dataframe(df.tail(5), use_container_width=True, hide_index=True)
 
         st.divider()
-        render_charts(df)
+        max_units = max(     df["order_retailer"].max(),     df["order_regional"].max(),     df["order_dc"].max(),     df["order_producer"].max() )  render_charts(df, y_max=max_units)
 
         st.divider()
         st.subheader("Agentic AI Replay (same demand)")
@@ -422,7 +422,8 @@ with right:
             c2.metric("AI Cost", f"{cost_ai:.2f}", delta=f"{(cost_h - cost_ai):.2f} lower")
 
             st.caption("Agentic AI charts")
-            render_charts(df_ai, title_suffix=" (Agentic AI)")
+            render_charts(df_ai, title_suffix=" (Agentic AI)", y_max=max_units)
 
     else:
         st.info("Start advancing weeks to see KPIs and charts.")
+
