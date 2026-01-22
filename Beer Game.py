@@ -72,7 +72,9 @@ def init_state(n_weeks: int):
             "cost_cum": 0.0,
         }
 
-    state["log"].append(("system", f"{APP_TITLE} initialized. Lead time={LEAD_TIME_WEEKS}w, spoilage={int(SPOILAGE_RATE*100)}%."))
+    state["log"].append(
+        ("system", f"{APP_TITLE} initialized. Lead time={LEAD_TIME_WEEKS}w, spoilage={int(SPOILAGE_RATE*100)}%.")
+    )
     state["log"].append(("system", "Round 1: Human ordering. Limited visibility. Type your order each week."))
     return state
 
@@ -208,7 +210,6 @@ def advance_week(state, human_order=None):
         metrics[k] = fulfill_and_cost(k, tier_demand[k], state)
 
     # Shipments arrive after lead time:
-    # Producer ships to DC, DC ships to Regional, Regional ships to Retailer
     state["nodes"]["dc"]["inbound_pipeline"].append(orders["producer"])
     state["nodes"]["regional"]["inbound_pipeline"].append(orders["dc"])
     state["nodes"]["retailer"]["inbound_pipeline"].append(orders["regional"])
@@ -236,7 +237,9 @@ def advance_week(state, human_order=None):
 
     # Log
     state["log"].append(("system", f"Week {w} complete. End-customer demand={end_customer_demand}."))
-    state["log"].append(("system", f"Orders: Retailer={orders['retailer']}, Regional={orders['regional']}, DC={orders['dc']}, Producer={orders['producer']}."))
+    state["log"].append(
+        ("system", f"Orders: Retailer={orders['retailer']}, Regional={orders['regional']}, DC={orders['dc']}, Producer={orders['producer']}.")
+    )
 
     # Advance time
     if w >= state["n_weeks"]:
@@ -262,7 +265,7 @@ def render_charts(df: pd.DataFrame, title_suffix="", y_max_orders=None):
     plt.legend()
     st.pyplot(fig1)
 
-    # Waste chart (let it autoscale; different units/magnitude)
+    # Waste chart (autoscale)
     fig2 = plt.figure()
     plt.plot(df["week"], df["retailer_waste_cum"], label="Retailer Waste (cum)")
     plt.plot(df["week"], df["regional_waste_cum"], label="Regional Waste (cum)")
@@ -296,7 +299,9 @@ def summarize(df: pd.DataFrame):
 # UI
 # -----------------------------
 st.title("📦 " + APP_TITLE)
-st.caption("Beer Game-style simulation for food distribution: lead time, perishability, bullwhip, and an Agentic AI replay for waste reduction.")
+st.caption(
+    "Beer Game-style simulation for food distribution: lead time, perishability, bullwhip, and an Agentic AI replay for waste reduction."
+)
 
 if "sim" not in st.session_state:
     st.session_state.sim = init_state(n_weeks=12)
@@ -304,6 +309,10 @@ if "sim" not in st.session_state:
 sim = st.session_state.sim
 
 with st.sidebar:
+    # --- Logo ---
+    st.image("Full Lockup - Colour.png", use_container_width=True)
+    st.markdown("---")
+
     st.header("Run Controls")
     sim["n_weeks"] = st.slider("Weeks", 8, 20, int(sim["n_weeks"]))
     if st.button("Reset Simulation"):
@@ -311,7 +320,11 @@ with st.sidebar:
         st.rerun()
 
     st.divider()
-    sim["human_role"] = st.selectbox("You control (Human Round)", options=ROLE_KEYS, format_func=lambda k: ROLES[ROLE_KEYS.index(k)])
+    sim["human_role"] = st.selectbox(
+        "You control (Human Round)",
+        options=ROLE_KEYS,
+        format_func=lambda k: ROLES[ROLE_KEYS.index(k)],
+    )
     sim["mode"] = st.selectbox("Mode", ["Human", "Agentic AI"])
     st.write("Lead time:", LEAD_TIME_WEEKS, "weeks")
     st.write("Spoilage:", f"{int(SPOILAGE_RATE*100)}%/week")
@@ -377,7 +390,6 @@ with right:
         st.caption("Most recent state")
         st.dataframe(df.tail(5), use_container_width=True, hide_index=True)
 
-        # Compute a stable y-axis max for orders (for honest visual comparisons)
         max_units_human = max(
             df["end_customer_demand"].max(),
             df["order_retailer"].max(),
@@ -385,7 +397,6 @@ with right:
             df["order_dc"].max(),
             df["order_producer"].max(),
         )
-        # Add a little headroom
         max_units_human = float(max_units_human) * 1.1 if max_units_human > 0 else 10.0
 
         st.divider()
@@ -420,3 +431,4 @@ with right:
             render_charts(df_ai, title_suffix=" (Agentic AI)", y_max_orders=max_units_human)
     else:
         st.info("Start advancing weeks to see KPIs and charts.")
+
