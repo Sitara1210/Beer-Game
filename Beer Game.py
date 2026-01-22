@@ -41,10 +41,7 @@ def default_demand_schedule(n_weeks: int):
     """
     schedule = []
     for w in range(1, n_weeks + 1):
-        if 4 <= w <= 6:
-            schedule.append(6)
-        else:
-            schedule.append(4)
+        schedule.append(6 if 4 <= w <= 6 else 4)
     return schedule
 
 
@@ -244,7 +241,7 @@ def advance_week(state, human_order=None):
     # Advance time
     if w >= state["n_weeks"]:
         state["finished"] = True
-        state["log"].append(("system", "Run finished. Use Agentic AI replay to compare waste & bullwhip."))
+        state["log"].append(("system", "Run finished. Review analysis below, then run Agentic AI replay."))
     else:
         state["week"] += 1
 
@@ -293,6 +290,32 @@ def summarize(df: pd.DataFrame):
         + last["producer_cost_cum"]
     )
     return float(total_waste), float(total_cost)
+
+
+def add_post_run_narrative():
+    """Narrative: what went wrong in Human round + recommendations."""
+    st.subheader("Post-Run Analysis: What Happened & Why")
+
+    st.markdown("""
+**1) Demand was stable, but orders were not**  
+The demand change was small and temporary, but orders amplified upstream — classic bullwhip behaviour driven by local signals.
+
+**2) Delayed feedback caused over-correction**  
+With a 2-week lead time, decisions were made before prior actions showed up, leading to overshoot (stockouts followed by excess inventory).
+
+**3) Food waste was a delayed consequence, not a mistake**  
+Perishable inventory arrived after demand normalized, so spoilage increased later. Waste is a structural outcome of delayed over-ordering.
+
+**4) Local optimisation increased system cost**  
+Each role behaved rationally with limited visibility, but the system became unstable because decisions were not coordinated end-to-end.
+    """)
+
+    st.markdown("### Recommendations")
+    st.markdown("""
+- **Coordinate decisions, not just forecasts:** better forecasts don’t prevent volatility if replenishment decisions still overreact under lead times.  
+- **Make inventory risk explicit:** decide where buffer should live (retail vs DC), because unmanaged risk turns into waste.  
+- **Use AI to stabilize the system:** value comes from dampening overreaction and synchronizing replenishment across tiers.
+    """)
 
 
 # -----------------------------
@@ -376,7 +399,7 @@ with left:
                 st.rerun()
     else:
         with st.chat_message("assistant"):
-            st.markdown("**Simulation complete.** Use the charts + replay to compare Human vs Agentic AI outcomes.")
+            st.markdown("**Simulation complete.** Review analysis on the right, then run the Agentic AI replay.")
 
 with right:
     st.subheader("System View (for professionals)")
@@ -401,6 +424,11 @@ with right:
 
         st.divider()
         render_charts(df, y_max_orders=max_units_human)
+
+        # Post-run narrative (only shows after finishing Human round)
+        if sim["finished"] and sim["mode"] == "Human":
+            st.divider()
+            add_post_run_narrative()
 
         st.divider()
         st.subheader("Agentic AI Replay (same demand)")
@@ -431,4 +459,6 @@ with right:
             render_charts(df_ai, title_suffix=" (Agentic AI)", y_max_orders=max_units_human)
     else:
         st.info("Start advancing weeks to see KPIs and charts.")
+
+
 
